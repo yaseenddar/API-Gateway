@@ -2,7 +2,7 @@ const { Model } = require('sequelize');
 const {UserRepository}= require('../repositories');
 const AppError = require('../utils/errors/app-errors');
 const userRep = new UserRepository();
-
+const {Auth} = require('../utils/common')
 
 async function create(data){
     
@@ -24,5 +24,26 @@ async function create(data){
        
     }
 }
+async function signin(data){
+    try {
+        const user = await userRep.getUserByEmail(data.email);
+        if(!user){
+            throw new AppError('No User found with Email',404);
+        }
+        const passwordMatch = Auth.checkPassword(data.password,user.password);
+        if(!passwordMatch){
+            throw new AppError('Invalid Password',404);
+        }
+        const jwt = Auth.createToken({id:user.id,email:data.email });
+        // console.log(jwt)
+        return jwt;
+    } catch (error) {
+        // console.log(error)
+        throw error
+    }
+}
 
-module.exports = {create}
+module.exports = {
+    create,
+    signin
+}
