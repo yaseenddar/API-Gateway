@@ -38,12 +38,35 @@ async function signin(data){
         // console.log(jwt)
         return jwt;
     } catch (error) {
-        // console.log(error)
         throw error
     }
 }
 
+async function isAuthenticated(token) {
+    try {
+        if(!token) {
+            throw new AppError('Missing JWT token', 400);
+        }
+        const response = Auth.verifyToken(token);
+        const user = await userRep.get(response.id);
+        if(!user) {
+            throw new AppError('No user found', 404);
+        }
+        return user.id;
+    } catch(error) {
+        // console.log(error)
+        if(error instanceof AppError) throw error;
+        if(error.name == 'JsonWebTokenError') {
+            throw new AppError('Invalid JWT token', 400);
+        }
+        if(error.name == 'TokenExpiredError') {
+            throw new AppError('JWT token expired', 400);
+        }
+        throw new AppError('Something went wrong', 500);
+    }
+}
 module.exports = {
+    isAuthenticated,
     create,
     signin
 }
